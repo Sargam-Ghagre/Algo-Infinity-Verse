@@ -804,6 +804,43 @@
       </div>
     </section>
 
+    <!-- Notes Modal -->
+    <div
+      class="modal"
+      id="notesModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="notesModalTitle"
+    >
+      <div class="modal-content notes-modal-content">
+        <div class="modal-header">
+          <h3 id="notesModalTitle">Problem Notes</h3>
+
+          <button class="modal-close" id="notesModalClose">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <!--Add Notes Modal Content-->
+        <div class="modal-body">
+          <textarea
+            id="problemNotesInput"
+            aria-label="Problem notes"
+            class="notes-textarea"
+            placeholder="Write your notes, hints, edge cases, or observations here..."
+          ></textarea>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" id="closeNotesBtn">Cancel</button>
+
+          <button class="btn btn-primary" id="saveNotesBtn">
+            <i class="fas fa-save"></i>
+            Save Notes
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Footer -->
     <footer class="footer">
       <div class="container">

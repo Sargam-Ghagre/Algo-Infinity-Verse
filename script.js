@@ -969,6 +969,7 @@ let userProgress = {
   avatar: "🚀",
   completedProblems: [],
   favoriteProblems: [], //here i have added a new property to store the user's favorite problems
+  problemNotes: {},
   xp: 0,
   level: 1,
   streak: 0,
@@ -1022,6 +1023,34 @@ document.addEventListener("DOMContentLoaded", () => {
     topicModal.addEventListener("click", (e) => {
       if (e.target === topicModal) {
         closeTopicModal();
+      }
+    });
+  }
+
+  const saveNotesBtn = document.getElementById("saveNotesBtn");
+
+  if (saveNotesBtn) {
+    saveNotesBtn.addEventListener("click", saveProblemNotes);
+  }
+
+  const notesModalClose = document.getElementById("notesModalClose");
+
+  if (notesModalClose) {
+    notesModalClose.addEventListener("click", closeNotesModal);
+  }
+
+  const closeNotesBtn = document.getElementById("closeNotesBtn");
+
+  if (closeNotesBtn) {
+    closeNotesBtn.addEventListener("click", closeNotesModal);
+  }
+
+  const notesModal = document.getElementById("notesModal");
+
+  if (notesModal) {
+    notesModal.addEventListener("click", (e) => {
+      if (e.target === notesModal) {
+        closeNotesModal();
       }
     });
   }
@@ -1650,7 +1679,7 @@ function showQuizResults(score, total, percentage, xpEarned) {
 
   resultEl.classList.remove("hidden");
 }
-
+let currentNotesProblemId = null;
 // ===== PRACTICE SECTION =====
 function initPracticeSection() {
   const problemsGrid = document.querySelector(".problems-grid");
@@ -1737,6 +1766,11 @@ function renderProblems(filter = "all", searchQuery = "") {
 data-id="${problem.id}">
         <i class="fas fa-heart"></i>
     </button>
+    <button class="notes-btn ${
+      userProgress.problemNotes[problem.id] ? "has-notes" : ""
+    }" data-id="${problem.id}">
+  <i class="fas fa-sticky-note"></i>
+</button>
 
                 <span class="difficulty-badge ${getDifficultyClass(problem.difficulty)}">${problem.difficulty}</span>
             </div>
@@ -1772,6 +1806,17 @@ data-id="${problem.id}">
     });
   });
 
+  // Notes button handlers
+  problemsGrid.querySelectorAll(".notes-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+
+      const problemId = parseInt(btn.dataset.id);
+      currentNotesProblemId = problemId;
+      openNotesModal(problemId);
+    });
+  });
+
   // Add click handlers
   problemsGrid.querySelectorAll(".problem-card").forEach((card) => {
     card.addEventListener("click", () => {
@@ -1795,6 +1840,39 @@ function toggleFavorite(problemId) {
   }
 
   saveUserData();
+}
+
+function openNotesModal(problemId) {
+  currentNotesProblemId = problemId;
+
+  const modal = document.getElementById("notesModal");
+  const textarea = document.getElementById("problemNotesInput");
+
+  textarea.value = userProgress.problemNotes[problemId] || "";
+
+  modal.classList.add("active");
+}
+
+function closeNotesModal() {
+  const modal = document.getElementById("notesModal");
+
+  modal.classList.remove("active");
+}
+
+function saveProblemNotes() {
+  const textarea = document.getElementById("problemNotesInput");
+
+  const note = textarea.value.trim();
+
+  if (currentNotesProblemId !== null) {
+    userProgress.problemNotes[currentNotesProblemId] = note;
+
+    saveUserData();
+
+    showNotification("Notes saved successfully 📝", "success");
+  }
+
+  closeNotesModal();
 }
 
 // ===== ROADMAP =====
@@ -2227,7 +2305,7 @@ function initChatbot() {
     if (!message) return;
 
     // Add user message
-    addChatMessage(`<p>${message}</p>`, "user");
+    addChatMessage(message, "user");
 
     // Store previous question
     lastQuestion = message;
@@ -2283,7 +2361,13 @@ function addChatMessage(message, sender) {
   const messagesContainer = document.getElementById("chatbotMessages");
   const messageEl = document.createElement("div");
   messageEl.className = `message ${sender}`;
-  messageEl.innerHTML = message;
+  // Safe rendering
+  if (sender === "user") {
+    messageEl.textContent = message;
+  } else {
+    messageEl.innerHTML = message;
+  }
+
   messagesContainer.appendChild(messageEl);
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
@@ -2303,10 +2387,10 @@ function getBotResponse(question) {
   return `
     <div class="assistant-response">
       <h4>🧠 Problem Understanding</h4>
-      <p>${question}</p>
+      <p>${escapeHtml(question)}</p>
 
       <h4>⚡ Approach</h4>
-      <p>${response}</p>
+      <p>${escapeHtml(response)}</p>
 
       <h4>💻 Code Solution</h4>
       <pre><code>
@@ -2467,6 +2551,8 @@ function loadUserData() {
       xp: 0,
       level: 1,
       streak: 0,
+      favoriteProblems: [],
+      problemNotes: {},
       badges: [],
       lastActive: null,
       quizScores: {},
