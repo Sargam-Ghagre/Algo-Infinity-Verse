@@ -11,22 +11,15 @@ const useFirestore = !!db;
 
 async function readUsers() {
   if (!useFirestore) {
-    const fs = await import("fs/promises");
-    const path = await import("path");
-    const { fileURLToPath } = await import("url");
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
-    const ROOT = path.resolve(__dirname, "..");
-    const USERS_FILE = path.join(ROOT, "data", "users.json");
-    try {
-      const raw = await fs.readFile(USERS_FILE, "utf8");
-      return JSON.parse(raw || "[]");
-    } catch {
-      return [];
-    }
+    return [];
   }
-  const snapshot = await db.collection(COLLECTIONS.USERS).get();
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  try {
+    const snapshot = await db.collection(COLLECTIONS.USERS).get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (error) {
+    console.error("Firestore read error:", error);
+    return [];
+  }
 }
 
 function sessionSecret() {
@@ -95,20 +88,25 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const payload = req.body;
-  const email = String(payload.email || "").trim().toLowerCase();
-  const password = String(payload.password || "");
-  const users = await readUsers();
-  const user = users.find((candidate) => candidate.email === email);
+  try {
+    const payload = req.body;
+    const email = String(payload.email || "").trim().toLowerCase();
+    const password = String(payload.password || "");
+    const users = await readUsers();
+    const user = users.find((candidate) => candidate.email === email);
 
-  if (!user || !passwordMatches(password, user.password)) {
-    return res.status(401).json({ error: "Invalid email or password." });
+    if (!user || !passwordMatches(password, user.password)) {
+      return res.status(401).json({ error: "Invalid email or password." });
+    }
+
+    const token = createSessionToken(user);
+
+    return res
+      .status(200)
+      .setHeader("Set-Cookie", sessionCookie(token))
+      .json({ user: { id: user.id, name: user.name, email: user.email } });
+  } catch (error) {
+    console.error("Login API error:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
-
-  const token = createSessionToken(user);
-
-  return res
-    .status(200)
-    .setHeader("Set-Cookie", sessionCookie(token))
-    .json({ user: { id: user.id, name: user.name, email: user.email } });
 }

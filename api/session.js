@@ -11,27 +11,17 @@ const useFirestore = !!db;
 
 async function readUsers() {
   if (!useFirestore) {
-    const fs = await import("fs/promises");
-    const path = await import("path");
-    const { fileURLToPath } = await import("url");
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
-    const ROOT = path.resolve(__dirname, "..");
-    const USERS_FILE = path.join(ROOT, "data", "users.json");
-    try {
-      const raw = await fs.readFile(USERS_FILE, "utf8");
-      return JSON.parse(raw || "[]");
-    } catch {
-      return [];
-    }
+    // In Vercel serverless, filesystem is read-only. Return empty array.
+    // For production, use Firebase or a database.
+    return [];
   }
-  const snapshot = await db.collection(COLLECTIONS.USERS).get();
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-}
-
-async function getUserByEmail(email) {
-  const users = await readUsers();
-  return users.find(u => u.email === email) || null;
+  try {
+    const snapshot = await db.collection(COLLECTIONS.USERS).get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (error) {
+    console.error("Firestore read error:", error);
+    return [];
+  }
 }
 
 function sessionSecret() {
@@ -116,20 +106,21 @@ function sessionCookie(token) {
     .join("; ");
 }
 
-function clearSessionCookie() {
-  return `${SESSION_COOKIE}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0`;
-}
-
 export default async function handler(req, res) {
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const cookies = parseCookies(req.headers.cookie || "");
-  const session = verifySessionToken(cookies[SESSION_COOKIE]);
+  try {
+    const cookies = parseCookies(req.headers.cookie || "");
+    const session = verifySessionToken(cookies[SESSION_COOKIE]);
 
-  return res.status(200).json({
-    authenticated: Boolean(session),
-    user: session,
-  });
+    return res.status(200).json({
+      authenticated: Boolean(session),
+      user: session,
+    });
+  } catch (error) {
+    console.error("Session API error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
 }

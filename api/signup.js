@@ -11,42 +11,19 @@ const useFirestore = !!db;
 
 async function readUsers() {
   if (!useFirestore) {
-    const fs = await import("fs/promises");
-    const path = await import("path");
-    const { fileURLToPath } = await import("url");
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
-    const ROOT = path.resolve(__dirname, "..");
-    const USERS_FILE = path.join(ROOT, "data", "users.json");
-    try {
-      const raw = await fs.readFile(USERS_FILE, "utf8");
-      return JSON.parse(raw || "[]");
-    } catch {
-      return [];
-    }
+    return [];
   }
-  const snapshot = await db.collection(COLLECTIONS.USERS).get();
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  try {
+    const snapshot = await db.collection(COLLECTIONS.USERS).get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (error) {
+    console.error("Firestore read error:", error);
+    return [];
+  }
 }
 
 async function writeUsers(users) {
-  if (!useFirestore) {
-    const fs = await import("fs/promises");
-    const path = await import("path");
-    const { fileURLToPath } = await import("url");
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
-    const ROOT = path.resolve(__dirname, "..");
-    const USERS_FILE = path.join(ROOT, "data", "users.json");
-    await fs.writeFile(USERS_FILE, `${JSON.stringify(users, null, 2)}\n`);
-    return;
-  }
-  // For Firestore, we'd use batch writes - but for now, just note that users are created individually
-}
-
-async function getUserByEmail(email) {
-  const users = await readUsers();
-  return users.find(u => u.email === email) || null;
+  // Not needed for Firestore - users created individually
 }
 
 function sessionSecret() {
@@ -123,36 +100,38 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const payload = req.body;
-  const validationError = validateSignup(payload);
-  if (validationError) return res.status(400).json({ error: validationError });
+  try {
+    const payload = req.body;
+    const validationError = validateSignup(payload);
+    if (validationError) return res.status(400).json({ error: validationError });
 
-  const users = await readUsers();
-  const email = String(payload.email).trim().toLowerCase();
-  if (users.some((user) => user.email === email)) {
-    return res.status(409).json({ error: "An account with this email already exists." });
+    const users = await readUsers();
+    const email = String(payload.email).trim().toLowerCase();
+    if (users.some((user) => user.email === email)) {
+      return res.status(409).json({ error: "An account with this email already exists." });
+    }
+
+    const user = {
+      id: crypto.randomUUID(),
+      name: String(payload.name).trim(),
+      email,
+      password: hashPassword(String(payload.password)),
+      createdAt: new Date().toISOString(),
+    };
+
+    if (useFirestore) {
+      const { addDoc } = await import("firebase/firestore");
+      await addDoc(db.collection(COLLECTIONS.USERS), user);
+    }
+
+    const token = createSessionToken(user);
+
+    return res
+      .status(201)
+      .setHeader("Set-Cookie", sessionCookie(token))
+      .json({ user: { id: user.id, name: user.name, email: user.email } });
+  } catch (error) {
+    console.error("Signup API error:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
-
-  const user = {
-    id: crypto.randomUUID(),
-    name: String(payload.name).trim(),
-    email,
-    password: hashPassword(String(payload.password)),
-    createdAt: new Date().toISOString(),
-  };
-
-  if (useFirestore) {
-    const { addDoc } = await import("firebase/firestore");
-    await addDoc(db.collection(COLLECTIONS.USERS), user);
-  } else {
-    users.push(user);
-    await writeUsers(users);
-  }
-
-  const token = createSessionToken(user);
-
-  return res
-    .status(201)
-    .setHeader("Set-Cookie", sessionCookie(token))
-    .json({ user: { id: user.id, name: user.name, email: user.email } });
 }
