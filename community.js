@@ -43,7 +43,7 @@ function getPosts() {
             return p;
         });
         if (migrated) savePosts(posts);
-        return posts;
+        return reconcilePosts(validatePosts(posts));
     }
     // Set initial data if none exists
     localStorage.setItem(COMMUNITY_STORAGE_KEY, JSON.stringify(initialPosts));
@@ -51,7 +51,60 @@ function getPosts() {
 }
 
 function savePosts(posts) {
-    localStorage.setItem(COMMUNITY_STORAGE_KEY, JSON.stringify(posts));
+    const validatedPosts = validatePosts(posts);
+    const reconciledPosts = reconcilePosts(validatedPosts);
+
+    localStorage.setItem(
+        COMMUNITY_STORAGE_KEY,
+        JSON.stringify(reconciledPosts)
+    );
+}
+
+function validatePosts(posts) {
+    return posts.filter(post =>
+        post &&
+        typeof post.id !== "undefined" &&
+        typeof post.title === "string" &&
+        typeof post.content === "string"
+    );
+}
+
+function reconcilePosts(posts) {
+    const uniquePosts = new Map();
+
+    posts.forEach(post => {
+        const existing = uniquePosts.get(post.id);
+
+        if (!existing) {
+            uniquePosts.set(post.id, post);
+            return;
+        }
+
+        const existingTime = new Date(existing.timestamp).getTime();
+        const currentTime = new Date(post.timestamp).getTime();
+
+        if (currentTime > existingTime) {
+            uniquePosts.set(post.id, post);
+        }
+    });
+
+    return Array.from(uniquePosts.values());
+}
+
+function sortCommentsByTimestamp(comments = []) {
+    return comments.sort(
+        (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
+    );
+}
+
+function generateUniquePostId(posts) {
+    let id = Date.now();
+
+    while (posts.some(post => post.id === id)) {
+        id++;
+    }
+
+    return id;
 }
 
 // ===== INITIALIZATION =====
@@ -236,6 +289,9 @@ function renderPosts() {
         }
 
         let commentsHtml = '';
+        if (post.comments) {
+            post.comments = sortCommentsByTimestamp(post.comments);
+        }
         if (post.comments && post.comments.length > 0) {
             commentsHtml = post.comments.map(c => `
                 <div class="comment">
@@ -296,9 +352,10 @@ function createNewPost() {
         tags = tagsInput.value.split(',').map(t => t.trim()).filter(t => t);
     }
 
-    const posts = getPosts();
+    let posts = getPosts();
+    posts = reconcilePosts(posts);
     const newPost = {
-        id: Date.now(), // simple unique id
+        id: generateUniquePostId(posts), // simple unique id
         title,
         content,
         tags,
@@ -322,7 +379,8 @@ function createNewPost() {
 }
 
 function handleVote(postId, voteValue) {
-    const posts = getPosts();
+    let posts = getPosts();
+    posts = reconcilePosts(posts);
     const post = posts.find(p => p.id === postId);
     if (post) {
         if (post.userVote === voteValue) {
@@ -354,7 +412,8 @@ function addComment(event, postId) {
 
     if (!text) return;
 
-    const posts = getPosts();
+    let posts = getPosts();
+    posts = reconcilePosts(posts);
     const post = posts.find(p => p.id === postId);
     
     if (post) {
