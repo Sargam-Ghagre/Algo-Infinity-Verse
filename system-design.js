@@ -9,9 +9,21 @@ function initHeroSection() {
     "Microservices",
     "Distributed Systems",
   ];
+
   let textIndex = 0;
   let charIndex = 0;
   let isDeleting = false;
+
+  const prefersReducedMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)"
+  ).matches;
+
+  if (prefersReducedMotion) {
+    if (typingElement) {
+      typingElement.textContent = texts[0];
+    }
+    return;
+  }
 
   function typeEffect() {
     const currentText = texts[textIndex];
@@ -35,13 +47,23 @@ function initHeroSection() {
       typeSpeed = 500;
     }
 
-    setTimeout(typeEffect, typeSpeed);
+    requestAnimationFrame(() => {
+      setTimeout(typeEffect, typeSpeed);
+    });
   }
 
-  typeEffect();
+  if (typingElement) {
+    typeEffect();
+  }
 
   // Animate stats
   const statNumbers = document.querySelectorAll(".stat-number");
+
+  const observerOptions = {
+    threshold: 0.5,
+    rootMargin: "0px 0px -50px 0px",
+  };
+
   const observer = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
@@ -51,8 +73,14 @@ function initHeroSection() {
         }
       });
     },
-    { threshold: 0.5 },
+    observerOptions
   );
 
   statNumbers.forEach((stat) => observer.observe(stat));
+
+  window.addEventListener(
+    "beforeunload",
+    () => observer.disconnect(),
+    { once: true }
+  );
 }
