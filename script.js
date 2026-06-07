@@ -985,6 +985,22 @@ const practiceProblems = [
     ],
     followUp: "What if the inputs contain Unicode characters? How would you adapt your solution?",
   },
+  {
+    id: 19,
+    title: "Single Number",
+    difficulty: "easy",
+    tags: ["Arrays", "Bit Manipulation"],
+    acceptance: "70.2%",
+    category: "arrays",
+    description:
+      "Given a non-empty array of integers nums, every element appears twice except for one. Find that single one. You must implement a solution with O(n) time complexity and O(1) space complexity.",
+    constraints: [
+      "1 ≤ nums.length ≤ 3 × 10⁴",
+      "-3 × 10⁴ ≤ nums[i] ≤ 3 × 10⁴",
+      "Each element appears exactly twice except for one element which appears exactly once",
+    ],
+    followUp: "Can you solve it without using extra memory, using XOR bit manipulation?",
+  },
 ];
 
 const dailyChallenges = [
@@ -3701,11 +3717,19 @@ function generateExamples(problem) {
         <strong>Example 3:</strong><br>Input: nums = [1,2,3]<br>Output: [1,2,3]<br>Explanation: No zeroes — array is unchanged.<br><br>
         <strong>Edge Cases:</strong><br>• All zeroes → same array<br>• No zeroes → unchanged<br>• Single element → unchanged<br><br>
         <strong>Follow-up:</strong> Can you do it with a single pass using the two-pointer technique to minimize writes?`,
+
     18: `<strong>Example 1:</strong><br>Input: s = "anagram", t = "nagaram"<br>Output: true<br>Explanation: Both strings contain the same characters with the same frequencies.<br><br>
         <strong>Example 2:</strong><br>Input: s = "rat", t = "car"<br>Output: false<br>Explanation: 'r','a','t' vs 'c','a','r' — different character sets.<br><br>
         <strong>Example 3:</strong><br>Input: s = "a", t = "a"<br>Output: true<br><br>
         <strong>Edge Cases:</strong><br>• Different lengths → always false<br>• Single character strings<br>• Strings with repeated characters<br><br>
         <strong>Follow-up:</strong> Can you solve it in O(n) using a Hash Map instead of sorting?`,
+        
+    19: `<strong>Example 1:</strong><br>Input: nums = [2,2,1]<br>Output: 1<br>Explanation: 1 appears only once while 2 appears twice.<br><br>
+        <strong>Example 2:</strong><br>Input: nums = [4,1,2,1,2]<br>Output: 4<br>Explanation: 4 appears only once; 1 and 2 each appear twice.<br><br>
+        <strong>Example 3:</strong><br>Input: nums = [1]<br>Output: 1<br>Explanation: Only one element — it is the single number by default.<br><br>
+        <strong>Edge Cases:</strong><br>• Single element array → return that element<br>• Large arrays with the unique element at start/middle/end<br>• Negative numbers — XOR works on negative integers too<br><br>
+        <strong>Key Insight (XOR):</strong><br>• a XOR a = 0 (same numbers cancel out)<br>• a XOR 0 = a (any number XOR 0 is itself)<br>• XOR all elements together → duplicates cancel, leaving the single number<br><br>
+        <strong>Follow-up:</strong> Can you solve it in O(n) time and O(1) space using XOR instead of a Hash Map?`,
   };
   return (
     examples[problem.id] || "<strong>Example:</strong><br>Solve this problem"
