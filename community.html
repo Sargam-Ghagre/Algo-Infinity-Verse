@@ -4,17 +4,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Community - Algo Infinity Verse</title>
+
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="community.css">
+
     <link
         href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Poppins:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body>
     <!-- Navigation Bar -->
-    <nav class="navbar" style="background: rgba(10, 10, 26, 0.95);">
+    <nav class="navbar">
         <div class="nav-logo">
             <span class="logo-text">∞</span>
             <span class="logo-title">Algo Infinity Verse</span>
@@ -41,7 +48,7 @@
         </div>
     </nav>
 
-    <div class="spacer" style="height: 80px;"></div>
+    <div class="spacer"></div>
 
     <!-- Community Section -->
     <section id="community" class="section community-section">
@@ -61,29 +68,45 @@
                     <div class="create-post-card glass-card">
                         <h3><i class="fas fa-pen"></i> Create a Post</h3>
                         <form id="createPostForm" class="create-post-form">
-                            <input type="text" id="postTitle" placeholder="Post Title" required
-                                style="font-family: inherit;">
-                            <textarea id="postContent"
-                                placeholder="What's on your mind? Share a resource, ask a question..." rows="4" required
-                                style="font-family: inherit;"></textarea>
-                            <input type="text" id="postTags"
+                            <input
+                                type="text"
+                                id="postTitle"
+                                placeholder="Post Title"
+                                required
+                            >
+                            <textarea
+                                id="postContent"
+                                placeholder="What's on your mind? Share a resource, ask a question..."
+                                rows="4"
+                                required
+                            ></textarea>
+
+                            <input
+                                type="text"
+                                id="postTags"
                                 placeholder="Tags (e.g., dp, graphs, arrays) - comma separated"
-                                style="font-family: inherit;">
-                            <button type="submit" class="post-submit-btn"><i class="fas fa-paper-plane"></i>
-                                Post</button>
+                            >
+
+                            <button type="submit" class="post-submit-btn">
+                                <i class="fas fa-paper-plane"></i>
+                                Post
+                            </button>
                         </form>
                     </div>
 
                     <!-- Feed Section -->
                     <div class="community-feed">
-                        <div class="feed-header-wrapper"
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                            <h3 style="margin: 0;"><i class="fas fa-stream"></i> Recent Discussions</h3>
-                            <div class="search-filter-container" style="display: flex; gap: 10px; align-items: center;">
-                                <input type="text" id="searchInput" placeholder="Search posts..." class="search-input"
-                                    style="padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: #fff; font-family: inherit; font-size: 0.95rem; outline: none;">
-                                <button id="clearFilterBtn" class="btn btn-secondary btn-sm" style="display:none;"
-                                    onclick="clearTagFilter()">Clear Filter</button>
+                        <div class="feed-header-wrapper">
+                            <h3>Recent Discussions</h3>
+                            <div class="search-filter-container">
+                                <input
+                                    type="text"
+                                    id="searchInput"
+                                    placeholder="Search posts..."
+                                    class="search-input">
+                                <button id="clearFilterBtn" class="btn btn-secondary btn-sm hidden-filter-btn">
+                                    <i class="fas fa-times"></i> Clear Filter
+                                </button>
                             </div>
                         </div>
                         <div id="postsContainer" class="posts-container">
